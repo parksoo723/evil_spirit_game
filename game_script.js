@@ -29,6 +29,16 @@ class EvilSpiritGame {
             knobY: 0
         };
         
+        // 스와이프 컨트롤
+        this.swipe = {
+            startX: 0,
+            startY: 0,
+            endX: 0,
+            endY: 0,
+            minDistance: 50,
+            isActive: false
+        };
+        
         this.members = [
             {
                 id: 'fire',
@@ -197,6 +207,7 @@ class EvilSpiritGame {
         
         // 모바일 컨트롤
         this.setupMobileControls();
+        this.setupSwipeControls();
         
         // 능력 버튼
         document.getElementById('abilityBtn').addEventListener('click', () => {
@@ -210,6 +221,129 @@ class EvilSpiritGame {
         document.getElementById('attackBtn').addEventListener('click', () => {
             this.basicAttack();
         });
+    }
+    
+    setupSwipeControls() {
+        const gameArea = document.getElementById('gameArea');
+        
+        // 터치 시작
+        const handleTouchStart = (e) => {
+            if (this.gameState !== 'playing') return;
+            
+            const touch = e.touches[0];
+            this.swipe.startX = touch.clientX;
+            this.swipe.startY = touch.clientY;
+            this.swipe.isActive = true;
+        };
+        
+        // 터치 이동 (스와이프 감지)
+        const handleTouchMove = (e) => {
+            if (!this.swipe.isActive || this.gameState !== 'playing') return;
+            e.preventDefault(); // 스크롤 방지
+        };
+        
+        // 터치 끝 (스와이프 실행)
+        const handleTouchEnd = (e) => {
+            if (!this.swipe.isActive || this.gameState !== 'playing') return;
+            
+            const touch = e.changedTouches[0];
+            this.swipe.endX = touch.clientX;
+            this.swipe.endY = touch.clientY;
+            
+            const deltaX = this.swipe.endX - this.swipe.startX;
+            const deltaY = this.swipe.endY - this.swipe.startY;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            // 최소 거리 이상 스와이프했을 때만 실행
+            if (distance >= this.swipe.minDistance) {
+                this.handleSwipeGesture(deltaX, deltaY, distance);
+            }
+            
+            this.swipe.isActive = false;
+        };
+        
+        // 게임 영역에 터치 이벤트 추가
+        gameArea.addEventListener('touchstart', handleTouchStart, { passive: false });
+        gameArea.addEventListener('touchmove', handleTouchMove, { passive: false });
+        gameArea.addEventListener('touchend', handleTouchEnd, { passive: false });
+        
+        // 마우스 이벤트도 추가 (데스크톱 테스트용)
+        gameArea.addEventListener('mousedown', (e) => {
+            if (this.gameState !== 'playing') return;
+            this.swipe.startX = e.clientX;
+            this.swipe.startY = e.clientY;
+            this.swipe.isActive = true;
+        });
+        
+        gameArea.addEventListener('mouseup', (e) => {
+            if (!this.swipe.isActive || this.gameState !== 'playing') return;
+            
+            this.swipe.endX = e.clientX;
+            this.swipe.endY = e.clientY;
+            
+            const deltaX = this.swipe.endX - this.swipe.startX;
+            const deltaY = this.swipe.endY - this.swipe.startY;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            if (distance >= this.swipe.minDistance) {
+                this.handleSwipeGesture(deltaX, deltaY, distance);
+            }
+            
+            this.swipe.isActive = false;
+        });
+    }
+    
+    handleSwipeGesture(deltaX, deltaY, distance) {
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+        
+        // 스와이프 방향 결정
+        if (absX > absY) {
+            // 좌우 스와이프
+            if (deltaX > 0) {
+                // 오른쪽 스와이프 - 기본 공격
+                this.basicAttack();
+                this.showSwipeEffect('→ 공격!', '#ff6b6b');
+            } else {
+                // 왼쪽 스와이프 - 기본 공격
+                this.basicAttack();
+                this.showSwipeEffect('← 공격!', '#ff6b6b');
+            }
+        } else {
+            // 상하 스와이프
+            if (deltaY > 0) {
+                // 아래쪽 스와이프 - 특수능력
+                this.useAbility();
+                this.showSwipeEffect('↓ 특수능력!', '#ffd700');
+            } else {
+                // 위쪽 스와이프 - 특수능력
+                this.useAbility();
+                this.showSwipeEffect('↑ 특수능력!', '#ffd700');
+            }
+        }
+    }
+    
+    showSwipeEffect(text, color) {
+        const gameArea = document.getElementById('gameArea');
+        const effect = document.createElement('div');
+        effect.className = 'swipe-effect';
+        effect.textContent = text;
+        effect.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: ${color};
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px ${color};
+            pointer-events: none;
+            z-index: 100;
+            animation: swipeEffectAnim 0.8s ease-out forwards;
+        `;
+        
+        gameArea.appendChild(effect);
+        setTimeout(() => effect.remove(), 800);
     }
     
     setupMobileControls() {
