@@ -884,6 +884,30 @@ body {
     }
 }
 
+/* 스와이프 효과 애니메이션 */
+@keyframes swipeEffectAnim {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.swipe-effect {
+    position: absolute;
+    pointer-events: none;
+    z-index: 100;
+    font-weight: bold;
+    text-shadow: 0 0 10px currentColor;
+}
+
 @media (min-width: 769px) {
     .controls {
         display: none;
